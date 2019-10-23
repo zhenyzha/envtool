@@ -7,7 +7,6 @@ from sys import version_info
 from collections import OrderedDict
 from platform import machine
 from base import options_func
-from base.utils_guest import Guest
 from multiprocessing import Process
 from base.utils_misc import waiting_procesor_bar, waiting_spin_procesor_bar
 from base.utils_misc import py3_get_terminal_size, py2_get_terminal_size
@@ -31,7 +30,6 @@ def main_loop(dict):
                           args=('Initializing VMT ....', 0.1, ))
     init_thread.daemon = True
     init_thread.start()
-    guest = Guest()
     init_thread.terminate()
     sys.stdout.write('\b')
     sys.stdout.flush()
