@@ -2,12 +2,11 @@
 import os
 import sys
 import logging
-from base import utils_brew, utils_cmd, utils_misc
+from base import utils_cmd, utils_misc
 from sys import version_info
 from collections import OrderedDict
 from platform import machine
 from base import options_func
-from base.utils_brew_plus import Brew
 from base.utils_guest import Guest
 from multiprocessing import Process
 from base.utils_misc import waiting_procesor_bar, waiting_spin_procesor_bar
@@ -18,12 +17,10 @@ color = utils_misc.Colored()
 def create_opt_desc():
     dict = OrderedDict()
     dict['1'] = 'Setup bridge network.'
-    dict['2'] = 'Search package.'
-    dict['3'] = 'Download build.'
-    dict['4'] = 'Setup iSCSI server.'
-    dict['5'] = 'Setup Ceph server.(TODO)'
-    dict['6'] = 'Download and bootstrap ipa.(TODO)'
-    dict['7'] = 'OpenStack deploy.'
+    dict['2'] = 'Setup iSCSI server.'
+    dict['3'] = 'Setup Ceph server.(TODO)'
+    dict['4'] = 'Download and bootstrap ipa.(TODO)'
+    dict['5'] = 'OpenStack deploy.'
     dict['l'] = 'List menu.'
     dict['q'] = 'Quit.'
     return dict
