@@ -25,7 +25,6 @@ def create_opt_desc():
 
 
 def main_loop(dict):
-    brew = Brew()
     init_thread = Process(target=waiting_spin_procesor_bar,
                           args=('Initializing VMT ....', 0.1, ))
     init_thread.daemon = True
