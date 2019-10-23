@@ -23,9 +23,7 @@ def create_opt_desc():
     dict['4'] = 'Setup iSCSI server.'
     dict['5'] = 'Setup Ceph server.(TODO)'
     dict['6'] = 'Download and bootstrap ipa.(TODO)'
-    dict['7'] = 'Download and bootstrap kar.'
-    dict['8'] = 'Run kar automation loop.(TODO)'
-    dict['9'] = 'OpenStack deploy.'
+    dict['7'] = 'OpenStack deploy.'
     dict['l'] = 'List menu.'
     dict['q'] = 'Quit.'
     return dict
@@ -64,14 +62,8 @@ def main_loop(dict):
         # Download and bootstrap ipa
         elif opt == '6':
             options_func.option_7()
-        # Download and bootstrap kar
-        elif opt == '7':
-            options_func.option_8()
-        # Run kar automation loop.
-        elif opt == '8':
-            options_func.option_9()
         # OpenStack deploy.
-        elif opt == '9':
+        elif opt == '7':
             if options_func.openstack_deploy()== 'q':
                 continue
         elif opt == 'l':
