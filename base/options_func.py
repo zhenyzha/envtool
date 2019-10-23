@@ -2,7 +2,7 @@
 import os
 import sys
 from platform import machine
-from base import utils_misc, utils_cmd, utils_brew
+from base import utils_misc, utils_cmd
 from collections import defaultdict
 import re
 from doctor_python.collection_unit.brew_collection import BrewCollection
@@ -123,27 +123,10 @@ def option_1():
 
 
 def option_2():
-    build = utils_misc.py2_and_py3_input('Please input build searched: ')
-    brew_list = utils_brew.brew_search(build)
-    for idx, desc in enumerate(sorted(brew_list)):
-        print('%d: %s' % (idx + 1, desc))
-
-
-def option_3():
-    nvr = utils_misc.py2_and_py3_input('Please input package '
-                                       'name version release(NVR) downloaded: ')
-    download_dir, ret = utils_brew.brew_download_rpms(rpm_nvr=nvr,
-                                                 arch=machine())
-    if not ret:
-        print(color.red('Please check package NVR or '
-                        'search it before download.'))
-
-
-def option_4():
     iscsi_target.run()
 
 
-def option_5():
+def option_3():
     s, o = utils_cmd.cmd_status_output('which ceph')
     if s:
         pack_list = []
@@ -207,12 +190,12 @@ def option_5():
                                 'search it before download.'))
 
 
-def option_6():
+def option_4():
     print('TODO')
     pass
 
 
-def option_7():
+def option_5():
     s, o = utils_cmd.cmd_status_output('which screen')
     if s:
         utils_cmd.cmd_status_output('yum install -y screen')
