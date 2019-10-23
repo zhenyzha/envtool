@@ -20,7 +20,6 @@ def create_opt_desc():
     dict['2'] = 'Setup iSCSI server.'
     dict['3'] = 'Setup Ceph server.(TODO)'
     dict['4'] = 'Download and bootstrap ipa.(TODO)'
-    dict['5'] = 'OpenStack deploy.'
     dict['l'] = 'List menu.'
     dict['q'] = 'Quit.'
     return dict
@@ -42,27 +41,15 @@ def main_loop(dict):
         # Setup bridge network
         if opt == '1':
             options_func.option_1()
-        # Search package
-        elif opt == '2':
-            if brew.search_package() == 'q':
-                continue
-        # Download build
-        elif opt == '3':
-            if brew.download_build() == 'q':
-                continue
         # Setup iSCSI server
-        elif opt == '4':
-            options_func.option_5()
-        # Setup Ceph server
-        elif opt == '5':
-            options_func.option_6()
+        elif opt == '2':
+            options_func.option_2()
+        # Setup Ceph server.
+        elif opt == '3':
+            options_func.option_3()
         # Download and bootstrap ipa
-        elif opt == '6':
-            options_func.option_7()
-        # OpenStack deploy.
-        elif opt == '7':
-            if options_func.openstack_deploy()== 'q':
-                continue
+        elif opt == '4':
+            options_func.option_4()
         elif opt == 'l':
             utils_misc.usage(dict)
         elif opt not in opt_dict:
