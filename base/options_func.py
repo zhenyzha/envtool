@@ -3,7 +3,6 @@ import os
 import sys
 from platform import machine
 from base import utils_misc, utils_cmd
-from collections import defaultdict
 import re
 from base.utils_misc import waiting_procesor_bar, waiting_spin_procesor_bar
 from multiprocessing import Process
