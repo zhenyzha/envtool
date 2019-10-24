@@ -1,8 +1,13 @@
 from __future__ import division
-from base import utils_cmd
+import re
+import sys
+from multiprocessing import Process
+from base import utils_cmd, utils_misc
+from base.utils_misc import waiting_procesor_bar, waiting_spin_procesor_bar
 
 
 ISCSI_CONFIG_FILE = "/etc/iscsi/initiatorname.iscsi"
+color = utils_misc.Colored()
 
 def run():
     """
@@ -10,6 +15,10 @@ def run():
     """
 
     iqn = "iqn.2019-06.com.kvmqe:target0"
+    net_thread = Process(target=waiting_spin_procesor_bar,
+                         args=('Configuring iscsi ....', 0.2))
+    net_thread.daemon = True
+    net_thread.start()
 
     # confirm if the target exists and create iSCSI target
     check_portal = utils_cmd.cmd_output('targetcli ls /iscsi 1',verbose=False)
@@ -28,6 +37,16 @@ def run():
     # Create a fileio backstore
     utils_cmd.cmd_output('targetcli /backstores/fileio/ create file_or_dev=/home/osd0 name=osd0 size=20G'
                          ,verbose=False)
+
+    # Check backstore
+    pattern = r'osd0'
+    check_return = utils_cmd.cmd_output('targetcli ls /backstores/fileio/', verbose=False)
+    match = re.findall(pattern, check_return)
+    if 'osd0' not in match:
+        print(color.red('create backstore failed'))
+        return
+    else:
+        print(color.yellow('create backstore success'))
 
     # Create an IQN with a target named target_name
     utils_cmd.cmd_output('targetcli /iscsi/ create %s'
@@ -76,7 +95,10 @@ def run():
     iscsi_login = utils_cmd.cmd_output('iscsiadm -m discovery -t st -p 0.0.0.0:3260',verbose=False)
     targ_name = iscsi_login.split(" ")[-1]
     utils_cmd.cmd_output('iscsiadm -m node -T %s -l' % (targ_name.strip('\n')),verbose=False)
-    print('pass')
+    net_thread.terminate()
+    sys.stdout.write('\b')
+    sys.stdout.flush()
+    print(color.yellow('Done'))
 
 if __name__ == "__main__":
     iscsi_settest = run()
