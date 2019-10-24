@@ -26,7 +26,7 @@ def run():
     #    which enables the local file system cache.
 
     # Create a fileio backstore
-    utils_cmd.cmd_output('targetcli /backstores/fileio/ create file_or_dev=/home/osd0 name=osd0 size=200G'
+    utils_cmd.cmd_output('targetcli /backstores/fileio/ create file_or_dev=/home/osd0 name=osd0 size=20G'
                          ,verbose=False)
 
     # Create an IQN with a target named target_name
