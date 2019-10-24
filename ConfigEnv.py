@@ -47,6 +47,9 @@ def main_loop(dict):
         # Download and bootstrap ipa
         elif opt == '4':
             options_func.option_4()
+        # bootstrap nested
+        elif opt == '5':
+            options_func.option_5()
         elif opt == 'l':
             utils_misc.usage(dict)
         elif opt not in opt_dict:
