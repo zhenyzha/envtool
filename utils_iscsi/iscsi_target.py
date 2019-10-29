@@ -2,8 +2,8 @@ from __future__ import division
 import re
 import sys
 from multiprocessing import Process
-from base import utils_cmd, utils_misc
-from base.utils_misc import waiting_procesor_bar, waiting_spin_procesor_bar
+from base import utils_cmd, utils_misc, utils_numeric
+from base.utils_misc import waiting_spin_procesor_bar
 
 
 ISCSI_CONFIG_FILE = "/etc/iscsi/initiatorname.iscsi"
@@ -30,21 +30,28 @@ def run():
     # 1) Create a block backstore that usually provides the best
     #    performance. We can use a block device like /dev/sdb or
     #    a logical volume previously created,
-    #     (lvcreate -name lv_iscsi -size 1G vg)
+    #     (lvcreate -name lv_iscsi -size size __G vg)
     # 2) Create a fileio backstore,
     #    which enables the local file system cache.
 
     # Create a fileio backstore
-    utils_cmd.cmd_output('targetcli /backstores/fileio/ create file_or_dev=/home/osd0 name=osd0 size=20G'
-                         ,verbose=False)
+    image_size = input('please input the lun size __G: ')
+    image_size1 = utils_numeric.normalize_data_size(image_size)
+
+    folder_size = utils_cmd.cmd_output('df /home'
+                                       , verbose=False)[-3] / 1024 / 1024
+    if image_size1 >= folder_size:
+        print("space overflow")
+    else:
+        utils_cmd.cmd_output('targetcli /backstores/fileio/ create file_or_dev=/home/osd0 name=osd0 size=%s'
+                         % image_size1,verbose=False)
 
     # Check backstore
-    pattern = r'osd0'
+    pattern = 'osd0'
     check_return = utils_cmd.cmd_output('targetcli ls /backstores/fileio/', verbose=False)
-    match = re.findall(pattern, check_return)
+    match = re.search(pattern, check_return)
     if 'osd0' not in match:
-        print(color.red('create backstore failed'))
-        return
+        return print(color.red('create backstore failed'))
     else:
         print(color.yellow('create backstore success'))
 
@@ -102,4 +109,3 @@ def run():
 
 if __name__ == "__main__":
     iscsi_settest = run()
-
