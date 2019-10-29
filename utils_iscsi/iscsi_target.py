@@ -18,7 +18,6 @@ def run():
     net_thread = Process(target=waiting_spin_procesor_bar,
                          args=('Configuring iscsi ....', 0.2))
     net_thread.daemon = True
-    net_thread.start()
 
     # confirm if the target exists and create iSCSI target
     check_portal = utils_cmd.cmd_output('targetcli ls /iscsi 1',verbose=False)
@@ -38,20 +37,23 @@ def run():
     image_size = input('please input the lun size __G: ')
     image_size1 = utils_numeric.normalize_data_size(image_size)
 
-    folder_size = utils_cmd.cmd_output('df /home'
-                                       , verbose=False)[-3] / 1024 / 1024
-    if image_size1 >= folder_size:
+    folder_list = ((utils_cmd.cmd_output('df /home'
+                                       , verbose=False)).split( ))
+    folder_size = float(folder_list[-3]) / 1024
+    if float(image_size1) >= folder_size:
         print("space overflow")
     else:
-        utils_cmd.cmd_output('targetcli /backstores/fileio/ create file_or_dev=/home/osd0 name=osd0 size=%s'
+        utils_cmd.cmd_output('targetcli /backstores/fileio/ create file_or_dev=/home/osd0 name=osd0 size=%sM'
                          % image_size1,verbose=False)
 
     # Check backstore
+    net_thread.start()
     pattern = 'osd0'
     check_return = utils_cmd.cmd_output('targetcli ls /backstores/fileio/', verbose=False)
-    match = re.search(pattern, check_return)
-    if 'osd0' not in match:
-        return print(color.red('create backstore failed'))
+    match = re.search(pattern, check_return).group(0)
+    if pattern not in match:
+        print(color.red('create backstore failed'))
+        sys.exit(0)
     else:
         print(color.yellow('create backstore success'))
 
