@@ -33,29 +33,47 @@ def run():
     # 2) Create a fileio backstore,
     #    which enables the local file system cache.
 
-    # Create a fileio backstore
-    image_size = input('please input the lun size __G: ')
-    image_size1 = utils_numeric.normalize_data_size(image_size)
+    #new lun number
+    img_number = input('please input the lun number: ')
 
+    #Detect the number of luns that already exist
+    def exist_lun():
+        output = utils_cmd.cmd_output(
+            'targetcli ls /backstores/fileio/', verbose=False)
+        searched = re.search(r'(\d+\d?)', output)
+        return searched.group(1)
+
+    #the number of all luns
+    exist_lun = exist_lun()
+    all_lun_number = (int(img_number) + int(exist_lun))
+
+    #image size
+    image_size = input('please input the lun size __G: ')
     folder_list = ((utils_cmd.cmd_output('df /home'
-                                       , verbose=False)).split( ))
+                                         , verbose=False)).split())
     folder_size = float(folder_list[-3]) / 1024
-    if float(image_size1) >= folder_size:
-        print("space overflow")
-    else:
-        utils_cmd.cmd_output('targetcli /backstores/fileio/ create file_or_dev=/home/osd0 name=osd0 size=%sM'
-                         % image_size1,verbose=False)
+    image_size1 = (utils_numeric.normalize_data_size(image_size))
+    image_size_all = (float(utils_numeric.normalize_data_size(image_size)) * int(all_lun_number))
+
+    net_thread.start()
+    for i in range(int(exist_lun) + 1 , int(all_lun_number) + 1):
+        if float(image_size_all) >= folder_size:
+            print("space overflow")
+        else:
+            utils_cmd.cmd_output('targetcli /backstores/fileio/ create \
+            file_or_dev=/home/osd%s name=osd%s size=%sM'
+                         % (i,i,image_size1),verbose=False)
 
     # Check backstore
-    net_thread.start()
-    pattern = 'osd0'
-    check_return = utils_cmd.cmd_output('targetcli ls /backstores/fileio/', verbose=False)
-    match = re.search(pattern, check_return).group(0)
-    if pattern not in match:
-        print(color.red('create backstore failed'))
-        sys.exit(0)
-    else:
-        print(color.yellow('create backstore success'))
+    for i in range(int(exist_lun) + 1 , int(all_lun_number) + 1):
+        pattern = ('osd%s' % i)
+        check_return = utils_cmd.cmd_output('targetcli ls /backstores/fileio/', verbose=False)
+        match = re.search(pattern, check_return).group(0)
+        if pattern not in match:
+            print(color.red('create backstore failed'))
+            sys.exit(0)
+        else:
+            print(color.yellow('create backstore success'))
 
     # Create an IQN with a target named target_name
     utils_cmd.cmd_output('targetcli /iscsi/ create %s'
@@ -71,15 +89,16 @@ def run():
                              % iqn,verbose=False)
 
     # Create lun
-    check_luns = utils_cmd.cmd_output('targetcli /iscsi/%s/tpg1/luns/ create /backstores/fileio/osd0'
-                                      % iqn,verbose=False)
-    if "lun0" not in check_luns:
-        utils_cmd.cmd_output('targetcli /iscsi/%s/tpg1/ set attribute authentication=0'
-                             % iqn,verbose=False)
-        utils_cmd.cmd_output('targetcli /iscsi/%s/tpg1/ set attribute demo_mode_write_protect=0'
-                             % iqn,verbose=False)
-        utils_cmd.cmd_output('targetcli /iscsi/%s/tpg1/ set attribute generate_node_acls=1'
-                             % iqn,verbose=False)
+    for i in range(int(exist_lun) + 1 , int(all_lun_number) + 1):
+        check_luns = utils_cmd.cmd_output('targetcli /iscsi/%s/tpg1/luns/ create /backstores/fileio/osd%s'
+                                          % (iqn,i),verbose=False)
+        if "lun0" not in check_luns:
+            utils_cmd.cmd_output('targetcli /iscsi/%s/tpg1/ set attribute authentication=0'
+                                 % iqn,verbose=False)
+            utils_cmd.cmd_output('targetcli /iscsi/%s/tpg1/ set attribute demo_mode_write_protect=0'
+                                 % iqn,verbose=False)
+            utils_cmd.cmd_output('targetcli /iscsi/%s/tpg1/ set attribute generate_node_acls=1'
+                                 % iqn,verbose=False)
 
     # Set initiatorname
     check_init = utils_cmd.cmd_output('cat /etc/iscsi/initiatorname.iscsi',verbose=False)
