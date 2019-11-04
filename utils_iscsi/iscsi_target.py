@@ -2,7 +2,7 @@ from __future__ import division
 import re
 import sys
 from multiprocessing import Process
-from base import utils_cmd, utils_misc, utils_numeric
+from base import utils_cmd, utils_misc, utils_numeric, user_exception
 from base.utils_misc import waiting_spin_procesor_bar
 
 
@@ -51,21 +51,25 @@ def run():
     image_size = input('please input the lun size __G: ')
     folder_list = ((utils_cmd.cmd_output('df /home'
                                          , verbose=False)).split())
-    folder_size = float(folder_list[-3]) / 1024
+    int_size = int(folder_list[-3]) / 1024
     image_size1 = (utils_numeric.normalize_data_size(image_size))
+    image_size2 = re.search(r'(\d{1,10})+(\.)?',image_size1).group(1).rstrip('.')
     image_size_all = (float(utils_numeric.normalize_data_size(image_size)) * int(all_lun_number))
 
     net_thread.start()
-    for i in range(int(exist_lun) + 1 , int(all_lun_number) + 1):
-        if float(image_size_all) >= folder_size:
-            print("space overflow")
+
+    for i in list(range(int(exist_lun) + 1, int(all_lun_number) + 1)):
+        if float(image_size_all) >= int_size:
+            print(color.red("space overflow"))
         else:
-            utils_cmd.cmd_output('targetcli /backstores/fileio/ create \
-            file_or_dev=/home/osd%s name=osd%s size=%sM'
-                         % (i,i,image_size1),verbose=False)
+            status, output = utils_cmd.cmd_status_output(
+                'targetcli /backstores/fileio/ create file_or_dev=/home/osd%s name=osd%s size=%sM'
+                 % (i, i, image_size2), verbose=False)
+            if status !=0:
+                print(color.red('Command Error: %s.' % output))
 
     # Check backstore
-    for i in range(int(exist_lun) + 1 , int(all_lun_number) + 1):
+    for i in list(range(int(exist_lun) + 1, int(all_lun_number) + 1)):
         pattern = ('osd%s' % i)
         check_return = utils_cmd.cmd_output('targetcli ls /backstores/fileio/', verbose=False)
         match = re.search(pattern, check_return).group(0)
@@ -86,15 +90,15 @@ def run():
         # 0.0.0.0 means binding to INADDR_ANY
         # and using default IP port 3260
         utils_cmd.cmd_output('targetcli /iscsi/%s/tpg1/portals/ create 0.0.0.0 3260'
-                             % iqn,verbose=False)
+                             % iqn, verbose=False)
 
     # Create lun
-    for i in range(int(exist_lun) + 1 , int(all_lun_number) + 1):
+    for i in list(range(int(exist_lun) + 1 , int(all_lun_number) + 1)):
         check_luns = utils_cmd.cmd_output('targetcli /iscsi/%s/tpg1/luns/ create /backstores/fileio/osd%s'
-                                          % (iqn,i),verbose=False)
+                                          % (iqn,i), verbose=False)
         if "lun0" not in check_luns:
             utils_cmd.cmd_output('targetcli /iscsi/%s/tpg1/ set attribute authentication=0'
-                                 % iqn,verbose=False)
+                                 % iqn, verbose=False)
             utils_cmd.cmd_output('targetcli /iscsi/%s/tpg1/ set attribute demo_mode_write_protect=0'
                                  % iqn,verbose=False)
             utils_cmd.cmd_output('targetcli /iscsi/%s/tpg1/ set attribute generate_node_acls=1'
