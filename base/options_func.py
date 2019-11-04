@@ -9,8 +9,8 @@ from multiprocessing import Process
 import time
 import socket
 from utils_iscsi import iscsi_target
-import string
-import configparser
+from utils_nested import bootstrap_nested
+
 
 
 color = utils_misc.Colored()
@@ -54,25 +54,42 @@ def install_qemu_package(nvr):
         return True
 
 
+#get localhost IP
+def get_host_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(('8.8.8.8', 80))
+        ip = s.getsockname()[0]
+    except OSError as err:
+        print("OS error: {0}".format(err))
+    else:
+        return ip
+
+#get bridge IP
+def get_switch_ip():
+    start = time.time()
+    while time.time() - start <= 120:
+        output = utils_cmd.cmd_output(
+            'ifconfig switch | grep inet| awk {print\$2}', verbose=False)
+        searched = re.search(r'(\d+(\.)+\d+(\.)+\d+(\.)+\d{1,3})', output)
+        if searched and "127.0.0.1" != searched.group(1):
+            return searched.group(1)
+    else:
+        print(color.red('Fail to get ip address of bridge device in 2 mins'))
+
+
 def option_1():
     net_thread = Process(target=waiting_spin_procesor_bar,
-                         args=('Configuring bridge network ....', 0.2))
+                         args=('Configuring bridge network ....', 0.1))
     net_thread.daemon = True
     net_thread.start()
 
-    #get localhost IP
-    def get_host_ip():
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            s.connect(('8.8.8.8', 80))
-            ip = s.getsockname()[0]
-        finally:
-            s.close()
-        return ip
-
+    #check net-tools
+    status, output = utils_cmd.cmd_status_output(cmd='which ifconfig', verbose=False)
+    if status:
+        utils_cmd.cmd_status_output(cmd='yum install -y net-tools',verbose=False)
     #setup bridge
-    nic_ip = get_host_ip()
-    nic_status = utils_cmd.cmd_output('ip addr | grep %s' % nic_ip, verbose=False)
+    nic_status = utils_cmd.cmd_output('ip addr | grep %s' % get_host_ip(), verbose=False)
     nic_name = nic_status.split(" ")[-1].strip('\n')
     connection = utils_cmd.cmd_output('nmcli device show %s | grep GENERAL.CONNECTION'
                          % nic_name, verbose=False)
@@ -87,24 +104,6 @@ def option_1():
     if utils_cmd.cmd_output('[ $? -ne 1 ]', verbose=False):
         print('NetworkManager Command failed')
 
-    #check_bridge
-    def check_bridge_dev_ip():
-        start = time.time()
-        # get_ip = False
-        while time.time() - start <= 120:
-             if utils_cmd.cmd_output('ifconfig switch | grep inet| awk {print\$2}'
-                                     , verbose=False).split("\n")[0] is None:
-                 time.sleep(5)
-                 continue
-             else:
-                 get_ip = True
-                 break
-
-        if not get_ip:
-             print('Fail to get ip address of bridge device in 2 mins')
-    check_bridge_dev_ip()
-
-
     #write configuration file
     utils_cmd.cmd_output('echo \"#!/bin/sh\nswitch=switch\nip link set \$1 up\n'
                          'ip link set dev \$1 master \${switch}\n'
@@ -117,10 +116,14 @@ def option_1():
                          , verbose=False)
 
     utils_cmd.cmd_output('chmod a+rx /etc/qemu-if*',verbose=False)
+
+    bridge_ip = get_switch_ip()
+
     net_thread.terminate()
     sys.stdout.write('\b')
     sys.stdout.flush()
     print(color.yellow('Done'))
+    print(color.green('The bridge IP: %s' % bridge_ip))
 
 
 def option_2():
@@ -197,8 +200,7 @@ def option_4():
 
 
 def option_5():
-    print('DOING')
-    pass
+    bootstrap_nested.run()
 
 if __name__ == "__main__":
     # create_qemu_ifdown_script('switch')
